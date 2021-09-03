@@ -1,6 +1,7 @@
 import itertools
 import sys
 import random
+import os
 
 class Sanitize:
     def __init__(self, g):
@@ -536,6 +537,7 @@ void gen_init__() {
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <stdint.h>
 '''
 
     def gen_main_src(self):
@@ -1120,11 +1122,18 @@ _%(key)s_%(ruleid)s_fi:
         return '\n'.join(result)
  
     def fn_fuzz_decs(self):
-        result = ['''
-  .section  __DATA,__data
+        if os.uname().sysname == "Darwin":
+            result = ['''
+.section  __DATA,__data
+''']
 
+        elif os.uname().sysname == "Linux":
+            result = ['''
+.section  __DATA
+''']
+        result.append('''\
 # Virtual Machine OPS.
-        ''']
+''')
         for k in self.grammar:
             result.append('''
     .globl  _%(key)s_choices
