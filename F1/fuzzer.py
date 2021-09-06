@@ -69,6 +69,7 @@ class CTrans(Sanitize):
 class Fuzzer:
     def __init__(self, grammar):
         self.grammar = grammar
+        self.system_name = os.uname().sysname # expect "Darwin" and "Linux"
     
     def fuzz(self, key='<start>', max_num=None, max_depth=None):
         raise NotImplemented()
@@ -752,8 +753,11 @@ int main(int argc, char** argv) {
 
 class CFWriteFuzzer(CFuzzerExtRandP):
     def main_out_var_defs(self):
-        return '''
-const uint64_t size = UINT_MAX; /*max size of a single input -- 4G*/
+        if self.system_name == "Darwin":
+            ret_str = 'const uint64_t size = UINT_MAX; /*max size of a single input -- 4G*/'
+        elif self.system_name == "Linux":
+            ret_str = 'const uint64_t size = UINT_MAX/100; /*max size of a single input -- 40M*/' 
+        return ret_str + '''
 char out_region_initp[size];
 char *out_regionp = out_region_initp;
 uint64_t out_cursor = 0;
@@ -971,11 +975,15 @@ return_abort:
 
     
     def main_stack_var_defs(self):
+        if self.system_name == "Darwin":
+            ret_str = 'void* stackp[INT_MAX];\n'
+        elif self.system_name == "Linux":
+            ret_str = 'void* stackp[INT_MAX/100];\n'
         return'''
 int max_depth;
 void** max_depthp;
-void* stackp[INT_MAX];
-'''
+''' + ret_str
+
     def main_init_var_defs(self):
         return'''
 void gen_init__(void** max_depthp);
@@ -1122,12 +1130,12 @@ _%(key)s_%(ruleid)s_fi:
         return '\n'.join(result)
  
     def fn_fuzz_decs(self):
-        if os.uname().sysname == "Darwin":
+        if self.system_name == "Darwin":
             result = ['''
 .section  __DATA,__data
 ''']
 
-        elif os.uname().sysname == "Linux":
+        elif self.system_name == "Linux":
             result = ['''
 .section  __DATA
 ''']
