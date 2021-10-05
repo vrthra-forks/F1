@@ -1137,7 +1137,7 @@ _%(key)s_%(ruleid)s_fi:
 
         elif self.system_name == "Linux":
             result = ['''
-.section  __DATA
+.text
 ''']
         result.append('''\
 # Virtual Machine OPS.
@@ -1172,9 +1172,13 @@ _%(key)s_prints:''' % {'key':self.k_to_s(k)})
         all_strings = list(all_strings)
         all_strings.sort(key=lambda item: (-len(item), item))
         all_prints_hash = {}
-        result = ['''
+        if self.system_name == "Darwin":
+            result = ['''
 .text
-        ''']
+            ''']
+        elif self.system_name == "Linux":
+            result = ['''
+            ''']
         for i, s_ in enumerate(all_strings):
             s = s_
             result.append('''\
